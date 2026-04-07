@@ -2316,6 +2316,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "wispy"
+version = "0.12.11"
+dependencies = [
+ "clap",
+ "main_error",
+ "stak-compiler",
+ "stak-configuration",
+ "stak-device",
+ "stak-file",
+ "stak-process-context",
+ "stak-r7rs",
+ "stak-time",
+ "stak-vm",
+ "winter-maybe-async",
+]
+
+[[package]]
 name = "wit-bindgen"
 version = "0.51.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

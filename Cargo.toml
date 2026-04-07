@@ -27,6 +27,7 @@ members = [
   "util",
   "vm",
   "wasm",
+  "wispy",
 ]
 exclude = ["cmd/minimal"]
 
