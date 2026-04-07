@@ -1,0 +1,129 @@
+//! Stak Scheme bytecode compiler.
+
+mod error;
+
+pub use self::error::CompileError;
+use core::env;
+use stak_configuration::DEFAULT_HEAP_SIZE;
+use stak_device::ReadWriteDevice;
+use stak_file::VoidFileSystem;
+use stak_process_context::VoidProcessContext;
+use stak_r7rs::SmallPrimitiveSet;
+use stak_time::VoidClock;
+use stak_vm::Vm;
+use std::io::{Read, Write};
+
+const PRELUDE_SOURCE: &str = include_str!("prelude.scm");
+const COMPILER_BYTECODE: &[u8] = include_bytes!(env!("STAK_BYTECODE_FILE"));
+
+/// Compiles a program in R7RS Scheme into bytecode.
+///
+/// # Examples
+///
+/// ```rust
+/// let source = "(define x 42)";
+/// let mut target = vec![];
+///
+/// stak_compiler::compile_r7rs(source.as_bytes(), &mut target).unwrap();
+/// ```
+pub fn compile_r7rs(source: impl Read, target: impl Write) -> Result<(), CompileError> {
+    compile_bare(PRELUDE_SOURCE.as_bytes().chain(source), target)
+}
+
+/// Compiles a program in Scheme into bytecode with only built-ins.
+///
+/// # Examples
+///
+/// ```rust
+/// let source = "($$define x 42)";
+/// let mut target = vec![];
+///
+/// stak_compiler::compile_bare(source.as_bytes(), &mut target).unwrap();
+/// ```
+pub fn compile_bare(source: impl Read, target: impl Write) -> Result<(), CompileError> {
+    let mut error_message = vec![];
+    let device = ReadWriteDevice::new(source, target, &mut error_message);
+    Vm::new(
+        // TODO Add a heap size option.
+        vec![Default::default(); DEFAULT_HEAP_SIZE],
+        SmallPrimitiveSet::new(
+            device,
+            VoidFileSystem::new(),
+            VoidProcessContext::new(),
+            VoidClock::new(),
+        ),
+    )?
+    .run(COMPILER_BYTECODE.iter().copied())
+    .map_err(|error| {
+        if error_message.is_empty() {
+            CompileError::Run(error)
+        } else {
+            CompileError::User(String::from_utf8_lossy(&error_message).into_owned())
+        }
+    })?;
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use indoc::indoc;
+
+    mod bare {
+        use super::*;
+
+        #[test]
+        fn compile_nothing() {
+            compile_bare(b"".as_slice(), &mut vec![]).unwrap();
+        }
+
+        #[test]
+        fn compile_define() {
+            compile_bare(b"($$define x 42)".as_slice(), &mut vec![]).unwrap();
+        }
+    }
+
+    mod r7rs {
+        use super::*;
+
+        #[test]
+        fn compile_nothing() {
+            compile_r7rs(b"".as_slice(), &mut vec![]).unwrap();
+        }
+
+        #[test]
+        fn compile_define() {
+            compile_r7rs(b"(define x 42)".as_slice(), &mut vec![]).unwrap();
+        }
+
+        #[test]
+        fn compile_invalid_macro_call() {
+            let Err(CompileError::User(message)) = compile_r7rs(
+                indoc!(
+                    r#"
+                    (import (scheme base))
+
+                    (define-syntax foo
+                        (syntax-rules ()
+                            ((_)
+                                #f)))
+
+                    (foo 42)
+                    "#
+                )
+                .as_bytes(),
+                &mut vec![],
+            ) else {
+                panic!()
+            };
+
+            assert!(message.contains("invalid syntax"));
+        }
+
+        #[test]
+        fn compile_write_library() {
+            compile_r7rs(b"(import (scheme write))".as_slice(), &mut vec![]).unwrap();
+        }
+    }
+}

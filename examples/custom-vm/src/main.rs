@@ -1,0 +1,49 @@
+//! An example of customized virtual machines.
+
+use core::error::Error;
+use stak::{
+    device::StdioDevice,
+    file::VoidFileSystem,
+    include_module,
+    module::{Module, UniversalModule},
+    process_context::VoidProcessContext,
+    r7rs::{SmallError, SmallPrimitiveSet},
+    time::VoidClock,
+    vm::Vm,
+};
+
+const HEAP_SIZE: usize = 1 << 16;
+
+static FOO_MODULE: UniversalModule = include_module!("foo.scm");
+static BAR_MODULE: UniversalModule = include_module!("bar.scm");
+
+fn main() -> Result<(), Box<dyn Error>> {
+    run(&FOO_MODULE.bytecode())?;
+    run(&BAR_MODULE.bytecode())?;
+
+    Ok(())
+}
+
+fn run(bytecode: &[u8]) -> Result<(), SmallError> {
+    let mut vm = Vm::new(
+        vec![Default::default(); HEAP_SIZE],
+        SmallPrimitiveSet::new(
+            StdioDevice::new(),
+            VoidFileSystem::new(),
+            VoidProcessContext::new(),
+            VoidClock::new(),
+        ),
+    )?;
+
+    vm.run(bytecode.iter().copied())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run() {
+        main().unwrap()
+    }
+}

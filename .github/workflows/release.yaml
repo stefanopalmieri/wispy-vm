@@ -1,0 +1,125 @@
+name: release
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  cargo:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'release' || '' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe # v1.0.4
+        id: auth
+        if: github.ref == 'refs/heads/main'
+      - run: tools/ci/release.sh ${{ github.ref != 'refs/heads/main' && '--dry-run' || '' }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+  wasm:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'release' || '' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/setup-node
+      - run: tools/wasm_build.sh
+      - uses: raviqqe/pnpm-publish@861df6deae4193d882d368966a23f188e2252004 # v1.0.1
+        with:
+          directory: wasm/pkg
+          release: ${{ github.ref == 'refs/heads/main' }}
+  goreleaser:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: brew install zig
+      - run: cargo install --locked cargo-zigbuild
+      - id: version
+        run: echo version=v$(cargo run --bin stak -- --version | grep -o '[0-9.]*') > ${{ github.output }}
+      - uses: raviqqe/goreleaser-action@8af8ed473f5cf03aa1f670ac5f728c4b29809fd6 # v1.0.1
+        with:
+          version: ${{ steps.version.outputs.version }}
+          snapshot: ${{ github.ref != 'refs/heads/main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  docker:
+    needs:
+      - cargo
+      - goreleaser
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - binary: stak
+          - binary: stak-compile
+          - binary: stak-decode
+          - binary: stak-interpret
+          - binary: stak-profile
+          - binary: stak-repl
+          - binary: mstak
+            directory: cmd/minimal
+          - binary: mstak-interpret
+            directory: cmd/minimal
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'release' || '' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+        if: ${{ github.ref == 'refs/heads/main' }}
+      - id: metadata
+        run: |
+          (
+            echo repository=${{ vars.DOCKER_USER || 'test' }}/${{ matrix.image.binary }}
+            echo version=$(git tag --points-at | sed s/^v//)
+          ) >> ${{ github.output }}
+      - uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        with:
+          build-args: |
+            BINARY=${{ matrix.image.binary }}
+            DIRECTORY=${{ matrix.image.directory || '.' }}
+          platforms: |
+            linux/amd64
+            ${{ github.ref == 'refs/heads/main' && 'linux/arm64/v8' || '' }}
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ steps.metadata.outputs.repository }}:latest
+            ${{ steps.metadata.outputs.version && format('{0}:{1}', steps.metadata.outputs.repository, steps.metadata.outputs.version) || '' }}
+      # spell-checker: disable-next-line
+      - uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
+        with:
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: ${{ steps.metadata.outputs.repository }}
+          short-description: The miniature, embeddable R7RS Scheme implementation
+        if: github.ref == 'refs/heads/main'
+  release:
+    needs:
+      - cargo
+      - docker
+      - goreleaser
+      - wasm
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: for result in ${{ join(needs.*.result, ' ') }}; do [ $result = success ]; done

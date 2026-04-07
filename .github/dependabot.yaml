@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directories:
+      - /
+      - /cmd/minimal
+    schedule:
+      interval: daily
+      time: "01:00"
+      timezone: Canada/Pacific
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: daily
+      time: "01:00"
+      timezone: Canada/Pacific
+  - package-ecosystem: gitsubmodule
+    directory: /
+    schedule:
+      interval: daily
+      time: "01:00"
+      timezone: Canada/Pacific
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: daily
+      time: "01:00"
+      timezone: Canada/Pacific
+  - package-ecosystem: npm
+    directory: /
+    groups:
+      astro:
+        patterns:
+          - astro
+          - "@astrojs/*"
+    schedule:
+      interval: daily
+      time: "01:00"
+      timezone: Canada/Pacific

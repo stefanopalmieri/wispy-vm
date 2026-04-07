@@ -1,0 +1,101 @@
+#!/bin/sh
+
+set -e
+
+filter_existent_paths() (
+  for path in "$@"; do
+    if [ -r $path ]; then
+      readlink -f $path
+    fi
+  done
+)
+
+list_dynamic_libraries() (
+  case $(uname) in
+  Darwin)
+    otool -L "$@" | tail -n +2 | grep -o '.*\.dylib'
+    ;;
+  *)
+    ldd "$@" | grep -o '/lib/[^ ]*'
+    ;;
+  esac
+)
+
+git_clone() (
+  directory=$(basename $1)
+
+  if [ -d $directory ]; then
+    cd $directory
+    git pull
+  else
+    git clone $1
+  fi
+)
+
+build_chibi() (
+  cd tmp
+  git_clone https://github.com/ashinn/chibi-scheme
+  cd chibi-scheme
+
+  flags=
+
+  # spell-checker: disable-next-line
+  make CFLAGS='-Os -DSEXP_USE_FLONUMS=1 -DSEXP_USE_NO_FEATURES=1' chibi-scheme-static
+)
+
+build_stak() (
+  target=$1
+
+  if [ -n "$target" ]; then
+    rustup target add $target
+    options="--target $target"
+  fi
+
+  build() (
+    cd $1
+    cargo build --release --bin $2 $options
+  )
+
+  build . stak
+  build cmd/minimal mstak
+)
+
+build_tr7() (
+  cd tmp
+  git_clone https://gitlab.com/jobol/tr7
+  cd tr7
+  make tr7i
+)
+
+. $(dirname $0)/utility.sh
+
+cd $(dirname $0)/..
+mkdir -p tmp
+
+if [ $(uname) = Linux ]; then
+  target=$(uname -m)-unknown-linux-musl
+fi
+
+build_chibi
+build_stak $target
+build_tr7
+
+binaries="cmd/minimal/target/$target/release/mstak target/$target/release/stak tmp/chibi-scheme/chibi-scheme-static tmp/tr7/tr7i"
+
+strip $binaries
+
+uname -a
+
+for binary in $binaries; do
+  libraries=$(filter_existent_paths $(list_dynamic_libraries $binary))
+
+  echo $binary '=>' $libraries
+
+  if [ -n "$libraries" ]; then
+    wc -c $libraries
+  fi
+done
+
+for binary in $binaries; do
+  echo $(basename $binary) $(wc -c <$binary)
+done | tee tmp/binary_size.txt

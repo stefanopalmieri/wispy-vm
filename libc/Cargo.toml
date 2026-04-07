@@ -1,0 +1,19 @@
+[package]
+name = "stak-libc"
+version.workspace = true
+edition.workspace = true
+description = "Stak Scheme libc utilities"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+rustix = { version = "1.1.4", default-features = false, features = [
+  "fs",
+  "mm",
+] }
+
+[lints]
+workspace = true

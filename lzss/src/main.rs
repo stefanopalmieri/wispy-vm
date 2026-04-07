@@ -1,0 +1,54 @@
+//! An LZSS compressor for ASCII characters.
+
+extern crate alloc;
+
+use alloc::vec;
+use clap::Parser;
+use core::error::Error;
+use stak_lzss::{Lzss, MAX_LENGTH, MAX_WINDOW_SIZE};
+use std::io::{self, Read, Write, stdin, stdout};
+
+#[derive(clap::Parser)]
+#[command(about, version)]
+struct Arguments {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(clap::Subcommand)]
+enum Command {
+    /// Compresses data.
+    Compress,
+    /// Decompresses data.
+    Decompress,
+    /// Bit-shift each byte in data to the left.
+    LeftShift {
+        #[arg()]
+        count: usize,
+    },
+    /// Bit-shift each byte in data to the right.
+    RightShift {
+        #[arg()]
+        count: usize,
+    },
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    match Arguments::parse().command {
+        Command::Compress => run(Lzss::compress::<{ MAX_WINDOW_SIZE + MAX_LENGTH }>)?,
+        Command::Decompress => run(Lzss::decompress::<{ MAX_WINDOW_SIZE }>)?,
+        Command::LeftShift { count } => run(|iterator| iterator.map(|x| x << count))?,
+        Command::RightShift { count } => run(|iterator| iterator.map(|x| x >> count))?,
+    }
+
+    Ok(())
+}
+
+fn run<I: Iterator<Item = u8>>(convert: impl Fn(vec::IntoIter<u8>) -> I) -> Result<(), io::Error> {
+    let mut data = vec![];
+
+    stdin().read_to_end(&mut data)?;
+    stdout().write_all(&convert(data.into_iter()).collect::<Vec<_>>())?;
+
+    Ok(())
+}

@@ -1,0 +1,8 @@
+---
+import classNames from "classnames";
+import styles from "./Demo.module.css";
+---
+
+<div class={classNames(styles.root, "not-content")}>
+  <slot />
+</div>

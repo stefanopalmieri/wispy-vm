@@ -1,0 +1,34 @@
+[package]
+name = "stak-interpret"
+version.workspace = true
+edition.workspace = true
+description = "Stak Scheme bytecode interpreter"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+clap = { version = "4.6.0", features = ["derive"] }
+main_error = "0.1.2"
+stak-configuration = { path = "../../configuration", version = "0.12.11" }
+stak-device = { path = "../../device", version = "0.12.11", features = ["std"] }
+stak-file = { path = "../../file", version = "0.12.11", features = ["std"] }
+stak-process-context = { path = "../../process-context", version = "0.12.11", features = [
+  "std",
+] }
+stak-r7rs = { path = "../../r7rs", version = "0.12.11" }
+stak-time = { path = "../../time", version = "0.12.11", features = ["std"] }
+stak-vm = { path = "../../vm", version = "0.12.11" }
+
+[features]
+default = ["float"]
+float = ["stak-vm/float"]
+float62 = ["stak-vm/float62"]
+gc_always = ["stak-vm/gc_always"]
+trace_instruction = ["stak-vm/trace_instruction"]
+trace_memory = ["stak-vm/trace_memory"]
+
+[lints]
+workspace = true

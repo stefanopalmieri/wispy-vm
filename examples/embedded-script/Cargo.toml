@@ -1,0 +1,16 @@
+[package]
+name = "embedded-script"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+any-fn = "0.6.3"
+rand = "0.10.0"
+stak = { path = "../../root", version = "0.12.11" }
+
+[build-dependencies]
+stak-build = { path = "../../build", version = "0.12.11" }
+
+[lints]
+workspace = true

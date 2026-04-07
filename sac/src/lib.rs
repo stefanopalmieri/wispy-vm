@@ -1,0 +1,157 @@
+//! Utilities to build executable binaries from bytecode files.
+
+#![cfg_attr(all(doc, not(doctest)), feature(doc_cfg))]
+#![no_std]
+
+#[cfg(feature = "libc")]
+#[doc(hidden)]
+pub extern crate alloc;
+#[cfg(feature = "std")]
+#[doc(hidden)]
+pub extern crate std;
+
+#[doc(hidden)]
+pub mod __private {
+    #[cfg(feature = "libc")]
+    pub use alloc;
+    #[cfg(feature = "std")]
+    pub use clap;
+    #[cfg(feature = "libc")]
+    pub use dlmalloc;
+    #[cfg(feature = "std")]
+    pub use main_error;
+    #[cfg(feature = "libc")]
+    pub use origin;
+    pub use stak_configuration;
+    pub use stak_device;
+    pub use stak_file;
+    pub use stak_macro;
+    pub use stak_process_context;
+    pub use stak_r7rs;
+    pub use stak_time;
+    pub use stak_vm;
+    #[cfg(feature = "std")]
+    pub use std;
+}
+
+/// Defines a `main` function that runs a given source file.
+///
+/// The R7RS standard libraries are based on [the `std` crate](https://doc.rust-lang.org/std/).
+///
+/// The given source file is compiled into bytecode and bundled into a
+/// resulting binary.
+///
+/// # Examples
+///
+/// ```rust
+/// use stak::sac::main;
+///
+/// main!("main.scm");
+/// ```
+#[cfg(feature = "std")]
+#[macro_export]
+macro_rules! main {
+    ($path:expr) => {
+        $crate::main!(
+            $path,
+            $crate::__private::stak_configuration::DEFAULT_HEAP_SIZE
+        );
+    };
+    ($path:expr, $heap_size:expr) => {
+        use $crate::__private::{
+            clap::{self, Parser},
+            main_error::MainError,
+            stak_device::StdioDevice,
+            stak_file::OsFileSystem,
+            stak_macro::include_r7rs,
+            stak_process_context::OsProcessContext,
+            stak_r7rs::SmallPrimitiveSet,
+            stak_time::OsClock,
+            stak_vm::Vm,
+        };
+
+        #[derive(clap::Parser)]
+        #[command(disable_help_flag = true, ignore_errors = true, version)]
+        struct Arguments {
+            #[arg()]
+            arguments: Vec<String>,
+            #[arg(short = 's', long, default_value_t = $heap_size)]
+            heap_size: usize,
+        }
+
+        fn main() -> Result<(), MainError> {
+            let arguments = Arguments::parse();
+
+            Vm::new(
+                vec![Default::default(); arguments.heap_size],
+                SmallPrimitiveSet::new(
+                    StdioDevice::new(),
+                    OsFileSystem::new(),
+                    OsProcessContext::new(),
+                    OsClock::new(),
+                ),
+            )?
+            .run(include_r7rs!($path).iter().copied())?;
+
+            Ok(())
+        }
+    };
+}
+
+/// Defines a `main` function that runs a given source file.
+///
+/// The R7RS standard libraries are based on [the `libc` crate](https://docs.rs/libc).
+///
+/// The given source file is compiled into bytecode and bundled into a
+/// resulting binary.
+#[cfg(feature = "libc")]
+#[macro_export]
+macro_rules! libc_main {
+    ($path:expr) => {
+        $crate::libc_main!(
+            $path,
+            $crate::__private::stak_configuration::DEFAULT_HEAP_SIZE
+        );
+    };
+    ($path:expr, $heap_size:expr) => {
+        use $crate::__private::{
+            alloc::vec,
+            dlmalloc::GlobalDlmalloc,
+            origin::program::exit,
+            stak_device::libc::{ReadWriteDevice, Stderr, Stdin, Stdout},
+            stak_file::LibcFileSystem,
+            stak_macro::include_r7rs,
+            stak_process_context::LibcProcessContext,
+            stak_r7rs::SmallPrimitiveSet,
+            stak_time::LibcClock,
+            stak_vm::Vm,
+        };
+
+        #[global_allocator]
+        static GLOBAL_ALLOCATOR: GlobalDlmalloc = GlobalDlmalloc;
+
+        #[cfg(not(test))]
+        #[panic_handler]
+        fn panic(_info: &core::panic::PanicInfo) -> ! {
+            exit(1)
+        }
+
+        #[cfg_attr(not(test), unsafe(no_mangle))]
+        extern "C" fn main(argc: isize, argv: *const *const i8) {
+            Vm::new(
+                vec![Default::default(); $heap_size],
+                SmallPrimitiveSet::new(
+                    ReadWriteDevice::new(Stdin::new(), Stdout::new(), Stderr::new()),
+                    LibcFileSystem::new(),
+                    unsafe { LibcProcessContext::new(argc, argv) },
+                    LibcClock::new(),
+                ),
+            )
+            .unwrap()
+            .run(include_r7rs!($path).iter().copied())
+            .unwrap();
+
+            exit(0);
+        }
+    };
+}

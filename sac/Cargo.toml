@@ -1,0 +1,52 @@
+[package]
+name = "stak-sac"
+version.workspace = true
+edition.workspace = true
+description = "Stand-Alone Complex for Stak Scheme"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+clap = { version = "4.6.0", features = ["derive"], optional = true }
+dlmalloc = { version = "0.2.13", features = ["global"], optional = true }
+main_error = { version = "0.1.2", optional = true }
+origin = { version = "0.26.2", default-features = false, features = [
+  "libc",
+], optional = true }
+stak-configuration = { path = "../configuration", version = "0.12.11" }
+stak-device = { path = "../device", version = "0.12.11" }
+stak-file = { path = "../file", version = "0.12.11" }
+stak-macro = { path = "../macro", version = "0.12.11" }
+stak-process-context = { path = "../process-context", version = "0.12.11" }
+stak-r7rs = { path = "../r7rs", version = "0.12.11" }
+stak-time = { path = "../time", version = "0.12.11" }
+stak-vm = { path = "../vm", version = "0.12.11" }
+
+[dev-dependencies]
+stak = { path = "../root" }
+
+[features]
+float = ["stak-vm/float"]
+float62 = ["stak-vm/float62"]
+libc = [
+  "dep:dlmalloc",
+  "dep:origin",
+  "stak-device/libc",
+  "stak-file/libc",
+  "stak-process-context/libc",
+  "stak-time/libc",
+]
+std = [
+  "dep:clap",
+  "dep:main_error",
+  "stak-device/std",
+  "stak-file/std",
+  "stak-process-context/std",
+  "stak-time/std",
+]
+
+[lints]
+workspace = true

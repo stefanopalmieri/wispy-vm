@@ -1,0 +1,469 @@
+Feature: String
+
+  Scenario: Write a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-string "Hello, world!")
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "Hello, world!"
+
+  Scenario: Create a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-string (string #\A #\B #\C))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "ABC"
+
+  Scenario: Convert a string to a list
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (for-each write-char (string->list "Hello, world!"))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "Hello, world!"
+
+  Scenario: Convert a list to a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-string (list->string (string->list "Hello, world!")))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "Hello, world!"
+
+  Scenario Outline: Append strings
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-string (string-append <values>))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | values            | output    |
+      |                   |           |
+      | ""                |           |
+      | "foo"             | foo       |
+      | "app" "le"        | apple     |
+      | "dis" "cov" "ery" | discovery |
+
+  Scenario Outline: Get a character in a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-char (string-ref "<string>" <index>))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | string | index | output |
+      | a      | 0     | a      |
+      | ab     | 0     | a      |
+      | ab     | 1     | b      |
+      | abc    | 0     | a      |
+      | abc    | 1     | b      |
+      | abc    | 2     | c      |
+
+  Scenario Outline: Set a character in a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (define xs (string-copy "aaa"))
+
+      (string-set! xs <index> #\<character>)
+
+      (write-u8 (if (equal? xs "<output>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | index | character | output |
+      | 0     | b         | baa    |
+      | 1     | b         | aba    |
+      | 2     | b         | aab    |
+      | 0     | a         | aaa    |
+
+    @gauche @guile @stak
+    Examples:
+      | index | character | output |
+      | 1     | 😄         | a😄a    |
+
+  Scenario Outline: Get a length of a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (= (string-length "<value>") <length>) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | value | length |
+      |       | 0      |
+      | a     | 1      |
+      | aa    | 2      |
+      | aaa   | 3      |
+
+  Scenario Outline: Get a sub-string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (equal? (substring "<value>" <start> <end>) "<output>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | value | start | end | output |
+      |       | 0     | 0   |        |
+      | a     | 0     | 0   |        |
+      | a     | 0     | 1   | a      |
+      | ab    | 0     | 0   |        |
+      | ab    | 0     | 1   | a      |
+      | ab    | 1     | 2   | b      |
+      | ab    | 0     | 2   | ab     |
+      | abc   | 0     | 0   |        |
+      | abc   | 0     | 1   | a      |
+      | abc   | 1     | 2   | b      |
+      | abc   | 2     | 3   | c      |
+      | abc   | 0     | 2   | ab     |
+      | abc   | 1     | 3   | bc     |
+      | abc   | 0     | 3   | abc    |
+
+  Scenario Outline: Get a length of a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (= (string-length "<value>") <length>) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | value | length |
+      |       | 0      |
+      | a     | 1      |
+      | aa    | 2      |
+      | aaa   | 3      |
+
+  Scenario Outline: Copy a string in place
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (define xs (string-copy "<to>"))
+
+      (string-copy! xs <at> "<from>" <start> <end>)
+
+      (write-u8 (if (equal? xs "<output>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    # spell-checker: disable
+    Examples:
+      | to    | at | from | start | end | output |
+      | A     | 0  |      |       |     | A      |
+      | ABC   | 0  | DEF  |       |     | DEF    |
+      | ABC   | 1  | DE   |       |     | ADE    |
+      | ABC   | 2  | D    |       |     | ABD    |
+      | ABCDE | 1  | FGH  |       |     | AFGHE  |
+      | ABCD  | 1  | EFGH | 1     |     | AFGH   |
+      | ABCD  | 1  | EFGH | 1     | 3   | AFGD   |
+
+  # spell-checker: enable
+  Scenario Outline: Make a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (= (string-length (make-string <length>)) <length>) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | length |
+      | 0      |
+      | 1      |
+      | 2      |
+      | 3      |
+
+  Scenario Outline: Make a string with a character
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (equal? (make-string <length> <character>) "<output>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | length | character | output |
+      | 0      | #\\A      |        |
+      | 1      | #\\A      | A      |
+      | 2      | #\\A      | AA     |
+      | 3      | #\\A      | AAA    |
+      | 0      | #\\B      |        |
+      | 1      | #\\B      | B      |
+      | 2      | #\\B      | BB     |
+      | 3      | #\\B      | BBB    |
+
+  Scenario: Iterate over a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (string-for-each write-char "ABC")
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "ABC"
+
+  Scenario: Map a function to a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8
+        (if (equal? (string-map (lambda (x) (integer->char (+ 1 (char->integer x)))) "ABC") "BCD")
+          65
+          66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+  Scenario Outline: Check string equality
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (string=? "<value>" "<value>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | value |
+      |       |
+      | a     |
+      | ab    |
+      | abc   |
+
+  Scenario Outline: Check string inequality
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (string=? "<left>" "<right>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "B"
+
+    Examples:
+      | left | right |
+      |      | a     |
+      | a    |       |
+      | a    | b     |
+      | a    | ab    |
+      | ab   | a     |
+      | aa   | ab    |
+      | aa   | aaa   |
+      | aaa  | aa    |
+      | aaa  | aab   |
+      | aab  | aaa   |
+
+  Scenario Outline: Compare strings
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (<procedure> <strings>) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | procedure | strings        | output |
+      | string<?  | "" ""          | B      |
+      | string<?  | "" "a"         | A      |
+      | string<?  | "a" "b"        | A      |
+      | string<?  | "a" "b" "c"    | A      |
+      | string<?  | "a" "aa"       | A      |
+      | string<?  | "aa" "aa"      | B      |
+      | string<?  | "aa" "ab"      | A      |
+      | string<?  | "aa" "aaa"     | A      |
+      | string<?  | "aaa" "aab"    | A      |
+      | string>?  | "" ""          | B      |
+      | string>?  | "a" ""         | A      |
+      | string>?  | "a" "a"        | B      |
+      | string>?  | "b" "a"        | A      |
+      | string>?  | "c" "b" "a"    | A      |
+      | string>?  | "aa" "a"       | A      |
+      | string>?  | "aa" "aa"      | B      |
+      | string>?  | "ab" "aa"      | A      |
+      | string>?  | "ba" "aa"      | A      |
+      | string>?  | "ba" "ab"      | A      |
+      | string<=? | "aa" "aa"      | A      |
+      | string<=? | "aa" "ab"      | A      |
+      | string<=? | "ab" "aa"      | B      |
+      | string<=? | "aa" "aa" "ab" | A      |
+      | string>=? | "aa" "aa"      | A      |
+      | string>=? | "aa" "ab"      | B      |
+      | string>=? | "ab" "aa"      | A      |
+      | string>=? | "ab" "aa" "aa" | A      |
+
+  Scenario Outline: Compare strings ignoring letter cases
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base) (scheme char))
+
+      (write-u8 (if (<procedure> <strings>) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | procedure    | strings        | output |
+      | string-ci<?  | "" ""          | B      |
+      | string-ci<?  | "" "a"         | A      |
+      | string-ci<?  | "a" "B"        | A      |
+      | string-ci<?  | "a" "B" "C"    | A      |
+      | string-ci<?  | "a" "AA"       | A      |
+      | string-ci<?  | "AA" "aa"      | B      |
+      | string-ci<?  | "aa" "AB"      | A      |
+      | string-ci<?  | "aa" "AAA"     | A      |
+      | string-ci<?  | "aaa" "AAB"    | A      |
+      | string-ci>?  | "" ""          | B      |
+      | string-ci>?  | "a" ""         | A      |
+      | string-ci>?  | "A" "a"        | B      |
+      | string-ci>?  | "B" "a"        | A      |
+      | string-ci>?  | "C" "b" "a"    | A      |
+      | string-ci>?  | "AA" "a"       | A      |
+      | string-ci>?  | "aa" "AA"      | B      |
+      | string-ci>?  | "AB" "aa"      | A      |
+      | string-ci>?  | "BA" "aa"      | A      |
+      | string-ci>?  | "BA" "ab"      | A      |
+      | string-ci<=? | "aa" "AA"      | A      |
+      | string-ci<=? | "aa" "AB"      | A      |
+      | string-ci<=? | "AB" "aa"      | B      |
+      | string-ci<=? | "aa" "AA" "AB" | A      |
+      | string-ci>=? | "AA" "aa"      | A      |
+      | string-ci>=? | "aa" "AB"      | B      |
+      | string-ci>=? | "AB" "aa"      | A      |
+      | string-ci>=? | "AB" "aa" "aa" | A      |
+
+  Scenario Outline: Convert a vector to a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-string (vector->string #(<characters>) <range>))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | characters     | range | output |
+      |                |       |        |
+      | #\\A           |       | A      |
+      | #\\A #\\B #\\C |       | ABC    |
+      | #\\A #\\B #\\C | 0     | ABC    |
+      | #\\A #\\B #\\C | 0 2   | AB     |
+      | #\\A #\\B #\\C | 1 3   | BC     |
+      | #\\A #\\B #\\C | 1 2   | B      |
+
+  Scenario Outline: Convert a vector to a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (write-u8 (if (equal? (string->vector "<string>" <range>) #(<characters>)) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | string | range | characters     |
+      |        |       |                |
+      | A      |       | #\\A           |
+      | ABC    |       | #\\A #\\B #\\C |
+      | ABC    | 0     | #\\A #\\B #\\C |
+      | ABC    | 0 2   | #\\A #\\B      |
+      | ABC    | 1 3   | #\\B #\\C      |
+      | ABC    | 1 2   | #\\B           |
+
+  Scenario Outline: Convert a string to a byte vector
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (define xs "<string>")
+
+      (write-u8 (if (equal? (utf8->string (string->utf8 xs)) xs) 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | string   |
+      |          |
+      | A        |
+      | ABC      |
+      | Aあ😄      |
+
+  Scenario Outline: Convert a string case
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base) (scheme char))
+
+      (write-u8 (if (equal? (<predicate> "<input>") "<output>") 65 66))
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "A"
+
+    Examples:
+      | predicate       | input | output |
+      | string-downcase | Ab    | ab     |
+      | string-foldcase | Ab    | ab     |
+      | string-upcase   | Ab    | AB     |
+
+  Scenario Outline: Fill a string
+    Given a file named "main.scm" with:
+      """scheme
+      (import (scheme base))
+
+      (define xs (string-copy "<string>"))
+
+      (string-fill! xs <arguments>)
+
+      (write-string xs)
+      """
+    When I successfully run `stak main.scm`
+    Then the stdout should contain exactly "<output>"
+
+    Examples:
+      | string | arguments | output |
+      | A      | #\\a      | a      |
+      | AB     | #\\a 0    | aa     |
+      | AB     | #\\a 1    | Aa     |
+      | ABC    | #\\a      | aaa    |
+      | ABCD   | #\\a 1 3  | AaaD   |

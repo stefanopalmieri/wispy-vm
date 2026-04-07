@@ -1,0 +1,10 @@
+---
+import Demo from "./Demo.astro";
+import { DemoForm } from "./InterpreterDemo/DemoForm.js";
+import { DemoOutput } from "./InterpreterDemo/DemoOutput.js";
+---
+
+<Demo>
+  <DemoForm client:visible />
+  <DemoOutput client:visible />
+</Demo>

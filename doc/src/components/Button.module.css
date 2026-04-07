@@ -1,0 +1,26 @@
+.root {
+  composes: boxShadow from "../system.module.css";
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: inherit;
+  background-color: var(--sl-color-text-accent);
+  color: var(--sl-color-text-invert);
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.7rem 1rem;
+  transition: transform 0.1s;
+
+  &[disabled] {
+    color: white;
+    background-color: dimgrey;
+  }
+
+  &:active {
+    transform: translateY(0.1rem);
+
+    &[disabled] {
+      transform: none;
+    }
+  }
+}

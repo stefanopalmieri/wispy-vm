@@ -1,0 +1,25 @@
+[package]
+name = "stak-time"
+version.workspace = true
+edition.workspace = true
+description = "Time library for Stak Scheme"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+rustix = { version = "1.1.4", default-features = false, features = [
+  "time",
+], optional = true }
+stak-vm = { path = "../vm", version = "0.12.11" }
+winter-maybe-async = "0.13.1"
+
+[features]
+async = ["stak-vm/async", "winter-maybe-async/async"]
+libc = ["dep:rustix"]
+std = []
+
+[lints]
+workspace = true

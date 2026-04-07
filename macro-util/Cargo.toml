@@ -1,0 +1,18 @@
+[package]
+name = "stak-macro-util"
+version.workspace = true
+edition.workspace = true
+description = "Macro utilities for Stak Scheme"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+proc-macro2 = "1.0.106"
+quote = "1.0.45"
+syn = "2.0.117"
+
+[lints]
+workspace = true

@@ -1,0 +1,77 @@
+name: lint
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: tools/lint.sh
+  rust_format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - run: cargo fmt -- --check
+  scheme_format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: cargo install schemat
+      - run: schemat -cv '**/*.scm'
+  gherkin_format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - run: go tool gherkin-format -check .
+  spell_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8.4.0
+        with:
+          files: "**/*.{feature,md,rs,scm,sh,toml}"
+  toml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup-node
+      - run: node --run lint:toml
+  unused_dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      # spell-checker: disable-next-line
+      - uses: bnjbvr/cargo-machete@7959c845782fed02ee69303126d4a12d64f1db18 # v0.9.1
+  readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: raviqqe/markdown-link-check@7887babb24c34c0832a82f919da10792c2bed096 # v1.0.4
+        with:
+          paths: README.md examples/**/*.md
+  lint:
+    needs:
+      - clippy
+      - readme
+      - rust_format
+      - scheme_format
+      - gherkin_format
+      - spell_check
+      - toml
+      - unused_dependencies
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for result in ${{ join(needs.*.result, ' ') }}; do
+            [ $result = success ]
+          done

@@ -1,0 +1,16 @@
+[package]
+name = "mstak"
+version.workspace = true
+edition.workspace = true
+description = "Minimal Stak Scheme interpreter"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+stak-sac = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,17 @@
+[package]
+name = "stak-util"
+version.workspace = true
+edition.workspace = true
+description = "Stak Scheme utilities"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+cfg-elif = "0.6.5"
+noop-executor = "0.1.2"
+
+[lints]
+workspace = true

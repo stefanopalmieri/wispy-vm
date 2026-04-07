@@ -1,0 +1,68 @@
+[package]
+name = "stak"
+version.workspace = true
+edition.workspace = true
+description = "Stak Scheme interpreter"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+stak-device = { path = "../device", version = "0.12.11" }
+stak-dynamic = { path = "../dynamic", version = "0.12.11", optional = true }
+stak-engine = { path = "../engine", version = "0.12.11", optional = true }
+stak-file = { path = "../file", version = "0.12.11" }
+stak-macro = { path = "../macro", version = "0.12.11" }
+stak-module = { path = "../module", version = "0.12.11" }
+stak-process-context = { path = "../process-context", version = "0.12.11" }
+stak-r7rs = { path = "../r7rs", version = "0.12.11" }
+stak-sac = { path = "../sac", version = "0.12.11" }
+stak-time = { path = "../time", version = "0.12.11" }
+stak-vm = { path = "../vm", version = "0.12.11" }
+
+[dev-dependencies]
+any-fn = "0.6.3"
+rand = "0.10.0"
+stak-build = { path = "../build" }
+
+[build-dependencies]
+stak-build = { path = "../build", version = "0.12.11" }
+
+[features]
+default = ["float", "std"]
+alloc = ["dep:stak-dynamic", "dep:stak-engine"]
+async = [
+  "stak-device/async",
+  "stak-dynamic/async",
+  "stak-engine/async",
+  "stak-file/async",
+  "stak-process-context/async",
+  "stak-r7rs/async",
+  "stak-time/async",
+  "stak-vm/async",
+]
+float = ["stak-sac/float", "stak-vm/float"]
+float62 = ["stak-sac/float", "stak-vm/float62"]
+hot-reload = ["stak-macro/hot-reload"]
+libc = [
+  "stak-device/libc",
+  "stak-engine/libc",
+  "stak-file/libc",
+  "stak-process-context/libc",
+  "stak-sac/libc",
+  "stak-time/libc",
+]
+std = [
+  "alloc",
+  "stak-device/std",
+  "stak-engine/std",
+  "stak-file/std",
+  "stak-process-context/std",
+  "stak-sac/std",
+  "stak-time/std",
+]
+
+[lints]
+workspace = true

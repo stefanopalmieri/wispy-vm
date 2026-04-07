@@ -1,0 +1,16 @@
+[package]
+name = "stak-module"
+version.workspace = true
+edition.workspace = true
+description = "Modules in Stak Scheme"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+hmr = "0.2.5"
+
+[lints]
+workspace = true

@@ -1,0 +1,6 @@
+.root {
+  composes: textArea from "../system.module.css";
+  overflow: auto;
+  resize: none;
+  font-size: inherit;
+}

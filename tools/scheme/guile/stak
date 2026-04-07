@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+while getopts l: option; do
+  case $option in
+  l)
+    cp $OPTARG ${OPTARG%.scm}.sld
+    ;;
+  esac
+done
+
+shift $(expr $OPTIND - 1)
+
+LC_ALL=en_US.UTF-8 guile --r7rs -L . "$@"

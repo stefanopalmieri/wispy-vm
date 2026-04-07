@@ -1,0 +1,32 @@
+[package]
+name = "stak-r7rs"
+version.workspace = true
+edition.workspace = true
+description = "Stak Scheme primitives for R7RS"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+stak-device = { path = "../device", version = "0.12.11" }
+stak-file = { path = "../file", version = "0.12.11" }
+stak-inexact = { path = "../inexact", version = "0.12.11" }
+stak-native = { path = "../native", version = "0.12.11" }
+stak-process-context = { path = "../process-context", version = "0.12.11" }
+stak-time = { path = "../time", version = "0.12.11" }
+stak-vm = { path = "../vm", version = "0.12.11" }
+winter-maybe-async = "0.13.1"
+
+[features]
+async = [
+  "stak-device/async",
+  "stak-file/async",
+  "stak-inexact/async",
+  "stak-native/async",
+  "stak-process-context/async",
+  "stak-time/async",
+  "stak-vm/async",
+  "winter-maybe-async/async",
+]

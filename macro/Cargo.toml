@@ -1,0 +1,44 @@
+[package]
+name = "stak-macro"
+version.workspace = true
+edition.workspace = true
+description = "Macros to integrate Stak Scheme"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+cfg-elif = "0.6.5"
+proc-macro2 = { version = "1.0.106", features = ["proc-macro"] }
+quote = "1.0.45"
+stak-compiler = { path = "../compiler", version = "0.12.11" }
+stak-macro-util = { path = "../macro-util", version = "0.12.11" }
+syn = "2.0.117"
+
+[dev-dependencies]
+stak-device = { path = "../device" }
+stak-file = { path = "../file" }
+stak-process-context = { path = "../process-context" }
+stak-r7rs = { path = "../r7rs" }
+stak-time = { path = "../time" }
+stak-vm = { path = "../vm" }
+
+[features]
+async = [
+  "stak-compiler/async",
+  "stak-device/async",
+  "stak-file/async",
+  "stak-process-context/async",
+  "stak-r7rs/async",
+  "stak-time/async",
+  "stak-vm/async",
+]
+hot-reload = []
+
+[lints]
+workspace = true

@@ -1,0 +1,34 @@
+#!/bin/sh
+
+set -e
+
+directory=$(dirname $0)/../../..
+
+while getopts l: option; do
+  case $option in
+  l)
+    libraries="$libraries $OPTARG"
+    ;;
+  esac
+done
+
+shift $(expr $OPTIND - 1)
+
+script=$1
+shift 1
+
+compile() (
+  options=$STAK_COMPILE_OPTIONS
+
+  if [ -n "$STAK_HOST" ]; then
+    $STAK_HOST $directory/compile.scm $options
+  else
+    $directory/target/release_test/stak-compile $options
+  fi
+)
+
+cat $directory/prelude.scm $libraries $script |
+  grep -v '^#!.*' |
+  compile >main.bc
+
+stak-interpret main.bc "$@"
