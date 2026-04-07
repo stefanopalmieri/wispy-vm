@@ -8,6 +8,7 @@
     APPLY CC TAU Y
     T_PAIR T_SYM T_CLS T_STR T_VEC T_CHAR T_CONT T_PORT
     TRUE EOF VOID
+    T_RECORD T_VALUES T_ERROR T_BYTEVEC T_PROMISE
     dot tau type-valid?)
 
   (import (scheme base))
@@ -41,6 +42,13 @@
     (define TRUE 20)
     (define EOF 21)
     (define VOID 22)
+
+    ;; R7RS type tags (23-27)
+    (define T_RECORD 23)
+    (define T_VALUES 24)
+    (define T_ERROR 25)
+    (define T_BYTEVEC 26)
+    (define T_PROMISE 27)
 
     ;; Native algebra primitives (handled by WispyPrimitiveSet)
     ;; (rib id '() 3) creates a procedure rib with the given primitive ID
