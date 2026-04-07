@@ -1768,6 +1768,7 @@ dependencies = [
  "stak-time",
  "stak-util",
  "winter-maybe-async",
+ "wispy-table",
 ]
 
 [[package]]
@@ -2346,6 +2347,10 @@ dependencies = [
  "stak-vm",
  "wispy",
 ]
+
+[[package]]
+name = "wispy-table"
+version = "0.1.0"
 
 [[package]]
 name = "wit-bindgen"
