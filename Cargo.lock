@@ -2333,6 +2333,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "wispy-repl"
+version = "0.12.11"
+dependencies = [
+ "main_error",
+ "stak-compiler",
+ "stak-configuration",
+ "stak-device",
+ "stak-file",
+ "stak-process-context",
+ "stak-time",
+ "stak-vm",
+ "wispy",
+]
+
+[[package]]
 name = "wit-bindgen"
 version = "0.51.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
