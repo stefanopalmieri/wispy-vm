@@ -1,0 +1,28 @@
+[package]
+name = "wispy-repl"
+version.workspace = true
+edition.workspace = true
+description = "WispyScheme REPL on Stak VM"
+readme.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+main_error = "0.1.2"
+stak-configuration = { path = "../../configuration", version = "0.12.11" }
+stak-device = { path = "../../device", version = "0.12.11", features = ["std"] }
+stak-file = { path = "../../file", version = "0.12.11", features = ["std"] }
+stak-process-context = { path = "../../process-context", version = "0.12.11", features = ["std"] }
+stak-time = { path = "../../time", version = "0.12.11", features = ["std"] }
+stak-vm = { path = "../../vm", version = "0.12.11" }
+wispy = { path = "../../wispy" }
+
+[build-dependencies]
+stak-compiler = { path = "../../compiler", version = "0.12.11" }
+
+[features]
+default = ["float"]
+float = ["stak-vm/float"]
+
+[lints]
+workspace = true
