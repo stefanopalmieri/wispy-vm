@@ -72,6 +72,14 @@ pub use number::Number;
 pub use primitive_set::PrimitiveSet;
 pub use profiler::Profiler;
 pub use stack_slot::StackSlot;
-pub use r#type::Type;
+pub use r#type::{
+    Type, CAYLEY, N as CAYLEY_N, dot as cayley_dot,
+    TOP, BOT, Q, E,
+    CAR as CAYLEY_CAR, CDR as CAYLEY_CDR, CONS as CAYLEY_CONS,
+    RHO, APPLY, CC, TAU, Y,
+    T_PAIR, T_SYM, T_CLS, T_STR, T_VEC, T_CHAR, T_CONT, T_PORT,
+    TRUE as CAYLEY_TRUE, EOF as CAYLEY_EOF, VOID as CAYLEY_VOID,
+    CORE, TYPE_TAGS,
+};
 pub use value::Value;
 pub use vm::Vm;
