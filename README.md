@@ -1,68 +1,93 @@
-# Stak Scheme
+# wispy-vm
 
-[![GitHub Action](https://img.shields.io/github/actions/workflow/status/raviqqe/stak/test.yaml?branch=main&style=flat-square)](https://github.com/raviqqe/stak/actions)
-[![Crate](https://img.shields.io/crates/v/stak.svg?style=flat-square)](https://crates.io/crates/stak)
-[![Codecov](https://img.shields.io/codecov/c/github/raviqqe/stak.svg?style=flat-square)](https://codecov.io/gh/raviqqe/stak)
-[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json&style=flat-square)](https://codspeed.io/raviqqe/stak)
-[![License](https://img.shields.io/github/license/raviqqe/stak.svg?style=flat-square)](https://github.com/raviqqe/stak/blob/main/LICENSE)
+Fork of [Stak Scheme](https://github.com/raviqqe/stak) with the [Cayley table](https://github.com/stefanopalmieri/wispy-table) integrated into the VM. Bytecode execution, semi-space GC, `no_std`/`no_alloc`, and native algebra primitives (`dot`, `tau`, `type-valid?`).
 
-The miniature, embeddable R7RS Scheme implementation in Rust
+## What's different from upstream Stak
 
-Stak Scheme aims to be:
+- **Cayley table in `vm/src/type.rs`** — the 32×32 algebraic dispatch table (1KB), element constants, and `dot()` function
+- **`wispy/` crate** — `WispyPrimitiveSet` (wraps `SmallPrimitiveSet` with algebra ops at IDs 600-602), `compile_wispy()` compiler entry point, `(wispy algebra)` prelude library, CLI with `(load)` resolution
+- **`cmd/wispy-repl/`** — interactive REPL with algebra pre-loaded into the interaction environment (164ms startup)
+- **`examples/wispy/`** — 15 Scheme programs: reflective tower, partial evaluator, Futamura projections, metacircular CPS evaluator, algebra smoke tests
+- **`benchmarks/wispy/`** — compiler benchmark inputs and C reference implementations
 
-- An embeddable Scheme interpreter for Rust with very small memory footprint and reasonable performance
-  - Its virtual machine (VM) is written in only 1.5 KLOC in Rust.
-- The minimal implementation of [the R7RS-small standard][r7rs-small]
-  - A subset of [Chibi Scheme](https://github.com/ashinn/chibi-scheme), [Gauche](https://github.com/shirok/Gauche), and [Guile](https://www.gnu.org/software/guile/)
-- A portable scripting environment that supports even no-`std` and no-`alloc` platforms
+Everything else is stock Stak v0.12.11. Upstream updates via `git fetch upstream && git merge upstream/main`.
 
-For the usage and examples, see [the documentation](https://raviqqe.com/stak/install).
+## Quick start
 
-## Install
+```bash
+# Build
+cargo build --release --package wispy
+cargo build --release --package wispy-repl
 
-### Commands
+# Run a file (compile + execute)
+./target/release/wispy examples/wispy/algebra-smoke.scm     # 83 tests pass
+./target/release/wispy examples/wispy/reflective-tower.scm   # 12ms execution
 
-To install [the interpreter](https://crates.io/crates/stak) and [REPL](https://crates.io/crates/stak-repl), run:
+# Interactive REPL
+./target/release/wispy-repl
+wispy> (dot CAR T_PAIR)
+12
+wispy> (tau (cons 1 2))
+12
+wispy> (define (fib n) (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+wispy> (fib 10)
+55
 
-```sh
-cargo install stak
-cargo install stak-repl
+# Compile to bytecode separately
+./target/release/wispy compile examples/wispy/fib.scm -o fib.bc
+./target/release/wispy run fib.bc
 ```
 
-To install [the minimal interpreter](https://crates.io/crates/mstak), run:
+## Part of the Wispy ecosystem
 
-```sh
-cargo install mstak
-```
+| Repo | What |
+|------|------|
+| [**wispy-table**](https://github.com/stefanopalmieri/wispy-table) | 1KB Cayley table + Lean proofs (14 theorems) + Z3 search |
+| **wispy-vm** (this repo) | Stak VM fork + REPL + examples + benchmarks |
+| [**wispy-compile**](https://github.com/stefanopalmieri/wispy-compile) | Scheme → Rust AOT compiler (1.7× faster than Chez) |
 
-### Libraries
+## Test coverage
 
-To install Stak Scheme as a library in your Rust project, run:
+| Example | Tests | Status |
+|---------|-------|--------|
+| algebra-smoke.scm | 83 | PASS |
+| pe.scm | 29 | PASS |
+| metacircular.scm | 25 | PASS |
+| reflective-tower.scm | 20 | PASS |
+| futamura-real.scm | 10 | PASS |
+| futamura-cps.scm | 23 | PASS |
+| futamura.scm | 15 | PASS |
 
-```sh
-cargo add stak
-cargo add --build stak-build
-cargo install stak-compile
-```
+Plus 9 unit tests in `wispy/src/lib.rs` covering `dot`, `tau`, `type-valid?`.
 
 ## Performance
 
-See [Performance](https://raviqqe.com/stak/performance).
+| Runtime | Mode | Time |
+|---------|------|------|
+| wispy-compile → Rust | AOT native | 5.3ms (fib 30) |
+| wispy-vm | bytecode VM | 160ms (fib 30) |
+| wispy-vm | pre-compiled bytecode | 12ms (reflective tower) |
+| wispy-repl | startup + 1 eval | 164ms |
 
-## Limitations
+## Architecture
 
-See [Limitations](https://raviqqe.com/stak/limitations).
+```
+wispy/src/
+├── lib.rs            compile_wispy() — prepends (wispy algebra) + compile_r7rs
+├── primitive_set.rs  WispyPrimitiveSet — dot(600), tau(601), type-valid?(602)
+├── prelude.scm       (wispy algebra) library: 23 constants + 3 native primitives
+└── main.rs           CLI: wispy [compile|run] file.scm
 
-## References
+cmd/wispy-repl/
+├── build.rs          compile-time: prelude + REPL source → bytecode
+├── src/main.rs       runtime: VM with WispyPrimitiveSet
+└── src/main.scm      REPL loop with (wispy algebra) in interaction-environment
+```
 
-- This project is based on [Ribbit Scheme][ribbit], the small and portable R4RS implementation.
-- [Scheme programming language][scheme]
-- [The R7RS-small standard][r7rs-small]
+## Upstream
+
+Forked from [raviqqe/stak](https://github.com/raviqqe/stak) v0.12.11 — the miniature, embeddable R7RS Scheme in Rust. Based on [Ribbit Scheme](https://github.com/udem-dlteam/ribbit).
 
 ## License
 
-[MIT](https://github.com/raviqqe/stak/blob/main/LICENSE)
-
-[scheme]: https://www.scheme.org/
-[r7rs-small]: https://small.r7rs.org/
-[ribbit]: https://github.com/udem-dlteam/ribbit
+[MIT](LICENSE)
